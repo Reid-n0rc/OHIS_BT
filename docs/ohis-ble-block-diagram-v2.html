@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OHIS BLE Bridge — Block Diagram v2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+  :root {
+    --bg:#0a0e14; --panel:#0f1520; --border:#1e2d42;
+    --cyan:#00d4ff; --amber:#ffb347; --green:#39d353;
+    --red:#ff5555; --purple:#bd93f9; --white:#e8edf5; --dim:#4a5a72;
+    --grid:rgba(0,212,255,0.035);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--white);
+    font-family:'Share Tech Mono',monospace;
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    padding:28px 12px 44px;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:40px 40px;
+  }
+  header{text-align:center;margin-bottom:28px}
+  header h1{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1.9rem;
+    letter-spacing:.15em;color:var(--cyan);text-transform:uppercase}
+  header p{font-size:.75rem;color:var(--dim);margin-top:5px;letter-spacing:.08em}
+  .wrap{width:100%;max-width:1400px;overflow-x:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px;justify-content:center}
+  .li{display:flex;align-items:center;gap:7px;font-size:.7rem;color:var(--dim)}
+  .ll{width:28px;height:2px}
+  .notes{max-width:1360px;margin-top:28px;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .nc{background:var(--panel);border:1px solid var(--border);
+    border-left:3px solid var(--cyan);padding:12px 14px;font-size:.7rem;line-height:1.75}
+  .nc h3{font-family:'Rajdhani',sans-serif;font-weight:600;color:var(--cyan);
+    font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+  .nc.am{border-left-color:var(--amber)} .nc.am h3{color:var(--amber)}
+  .nc.gr{border-left-color:var(--green)} .nc.gr h3{color:var(--green)}
+  .nc.pu{border-left-color:var(--purple)} .nc.pu h3{color:var(--purple)}
+  .nc.re{border-left-color:var(--red)} .nc.re h3{color:var(--red)}
+</style>
+</head>
+<body>
+<header>
+  <h1>OHIS BLE Bridge — Block Diagram</h1>
+  <p>OHIS User Device · ESP32-WROOM-32E · Classic BT + BLE · Sharp MIP Display · Battery + USB-C · Rev B</p>
+</header>
+
+<div class="wrap">
+<svg viewBox="0 0 1360 900" xmlns="http://www.w3.org/2000/svg"
+     font-family="'Share Tech Mono',monospace" font-size="9">
+
+<defs>
+  <marker id="ac" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#00d4ff"/></marker>
+  <marker id="aa" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#ffb347"/></marker>
+  <marker id="ag" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#39d353"/></marker>
+  <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#ff5555"/></marker>
+  <marker id="ap" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#bd93f9"/></marker>
+  <marker id="ad" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4a5a72"/></marker>
+  <filter id="glow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+
+<!-- ═══════════════════════════════════════════════════════
+     ROW LABELS
+═══════════════════════════════════════════════════════ -->
+<text x="12" y="44" fill="#4a5a72" font-size="8" letter-spacing="2">① OHIS</text>
+<text x="168" y="44" fill="#4a5a72" font-size="8" letter-spacing="2">② INTERFACE</text>
+<text x="358" y="44" fill="#4a5a72" font-size="8" letter-spacing="2">③ CODEC</text>
+<text x="558" y="44" fill="#4a5a72" font-size="8" letter-spacing="2">④ ESP32 SoC</text>
+<text x="860" y="44" fill="#4a5a72" font-size="8" letter-spacing="2">⑤ BT / BLE</text>
+<text x="1090" y="44" fill="#4a5a72" font-size="8" letter-spacing="2">⑥ POWER</text>
+<text x="1240" y="44" fill="#4a5a72" font-size="8" letter-spacing="2">⑦ HMI</text>
+
+<!-- ═══════════════════════════════════════════════════════
+     ① OHIS RJ-45 CONNECTOR
+═══════════════════════════════════════════════════════ -->
+<rect x="14" y="56" width="128" height="500" rx="4" fill="#0f1520" stroke="#1e2d42" stroke-width="1.5"/>
+<rect x="14" y="56" width="128" height="26" rx="4" fill="#1a2a3e"/>
+<text x="78" y="69" text-anchor="middle" fill="#00d4ff" font-weight="bold" letter-spacing="1">OHIS RJ-45</text>
+<text x="78" y="79" text-anchor="middle" fill="#4a5a72" font-size="7.5">8P8C · TIA-568B · shielded</text>
+
+<!-- Pin rows: y0=96, pitch=52 -->
+<!-- Vcc -->
+<rect x="22" y="92"  width="112" height="38" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="107" fill="#ffb347">PIN 1</text><text x="32" y="120" fill="#e8edf5" font-size="8">Vcc  5V / 200mA</text>
+<circle cx="134" cy="111" r="4" fill="#ffb347"/>
+<!-- PTT -->
+<rect x="22" y="136" width="112" height="38" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="151" fill="#ff5555">PIN 2</text><text x="32" y="164" fill="#e8edf5" font-size="8">PTT → PwrGND</text>
+<circle cx="134" cy="155" r="4" fill="#ff5555"/>
+<!-- MicGND -->
+<rect x="22" y="180" width="112" height="38" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="195" fill="#4a5a72">PIN 3</text><text x="32" y="208" fill="#e8edf5" font-size="8">Mic Ground</text>
+<circle cx="134" cy="199" r="4" fill="#4a5a72"/>
+<!-- HP L -->
+<rect x="22" y="224" width="112" height="38" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="239" fill="#00d4ff">PIN 4</text><text x="32" y="252" fill="#e8edf5" font-size="8">HP Left Audio</text>
+<circle cx="134" cy="243" r="4" fill="#00d4ff"/>
+<!-- HP GND -->
+<rect x="22" y="268" width="112" height="38" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="283" fill="#4a5a72">PIN 5</text><text x="32" y="296" fill="#e8edf5" font-size="8">HP Ground</text>
+<circle cx="134" cy="287" r="4" fill="#4a5a72"/>
+<!-- Mic Audio -->
+<rect x="22" y="312" width="112" height="38" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="327" fill="#39d353">PIN 6</text><text x="32" y="340" fill="#e8edf5" font-size="8">Mic Audio −45dBV</text>
+<circle cx="134" cy="331" r="4" fill="#39d353"/>
+<!-- PwrGND -->
+<rect x="22" y="356" width="112" height="38" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="371" fill="#4a5a72">PIN 7</text><text x="32" y="384" fill="#e8edf5" font-size="8">Power Ground</text>
+<circle cx="134" cy="375" r="4" fill="#4a5a72"/>
+<!-- HP R -->
+<rect x="22" y="400" width="112" height="38" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="415" fill="#00d4ff">PIN 8</text><text x="32" y="428" fill="#e8edf5" font-size="8">HP Right Audio</text>
+<circle cx="134" cy="419" r="4" fill="#00d4ff"/>
+<!-- Shield -->
+<rect x="22" y="444" width="112" height="34" rx="2" fill="#1a2a3e" stroke="#2a3d56"/>
+<text x="32" y="459" fill="#4a5a72">SHIELD</text><text x="32" y="471" fill="#e8edf5" font-size="8">→ PwrGND</text>
+<circle cx="134" cy="461" r="4" fill="#4a5a72"/>
+<text x="78" y="522" text-anchor="middle" fill="#4a5a72" font-size="7.5">← Radio Adapter</text>
+<text x="78" y="534" text-anchor="middle" fill="#4a5a72" font-size="7.5">This device = User side</text>
+
+<!-- ═══════════════════════════════════════════════════════
+     ② INTERFACE / PROTECTION
+═══════════════════════════════════════════════════════ -->
+<rect x="158" y="80" width="140" height="440" rx="4" fill="#0f1520" stroke="#1e2d42" stroke-width="1.5"/>
+<rect x="158" y="80" width="140" height="24" rx="4" fill="#1a2a3e"/>
+<text x="228" y="96" text-anchor="middle" fill="#00d4ff" font-weight="bold">ESD / INTERFACE</text>
+
+<rect x="167" y="114" width="122" height="44" rx="3" fill="#12213a" stroke="#00d4ff" stroke-width="1"/>
+<text x="228" y="130" text-anchor="middle" fill="#00d4ff">TVS Array</text>
+<text x="228" y="143" text-anchor="middle" fill="#4a5a72" font-size="7.5">PRTR5V0U2X — all signal pins</text>
+<text x="228" y="153" text-anchor="middle" fill="#4a5a72" font-size="7.5">±5V clamp, SOT363</text>
+
+<rect x="167" y="168" width="122" height="44" rx="3" fill="#12213a" stroke="#ffb347" stroke-width="1"/>
+<text x="228" y="184" text-anchor="middle" fill="#ffb347">Reverse Polarity</text>
+<text x="228" y="197" text-anchor="middle" fill="#4a5a72" font-size="7.5">P-MOSFET + Schottky on Vcc</text>
+<text x="228" y="207" text-anchor="middle" fill="#4a5a72" font-size="7.5">SI2301 / BAT54S</text>
+
+<rect x="167" y="222" width="122" height="44" rx="3" fill="#12213a" stroke="#4a5a72" stroke-width="1"/>
+<text x="228" y="238" text-anchor="middle" fill="#e8edf5">Ground Star</text>
+<text x="228" y="251" text-anchor="middle" fill="#4a5a72" font-size="7.5">MicGND · HPGND · PwrGND</text>
+<text x="228" y="261" text-anchor="middle" fill="#4a5a72" font-size="7.5">separated on PCB pour</text>
+
+<rect x="167" y="276" width="122" height="44" rx="3" fill="#12213a" stroke="#39d353" stroke-width="1"/>
+<text x="228" y="292" text-anchor="middle" fill="#39d353">Mic DC Block</text>
+<text x="228" y="305" text-anchor="middle" fill="#4a5a72" font-size="7.5">100nF series — Pin 6 out</text>
+<text x="228" y="315" text-anchor="middle" fill="#4a5a72" font-size="7.5">passes Radio DC bias</text>
+
+<rect x="167" y="330" width="122" height="44" rx="3" fill="#12213a" stroke="#ff5555" stroke-width="1"/>
+<text x="228" y="346" text-anchor="middle" fill="#ff5555">PTT Driver</text>
+<text x="228" y="359" text-anchor="middle" fill="#4a5a72" font-size="7.5">2N7002 N-FET gate ← GPIO</text>
+<text x="228" y="369" text-anchor="middle" fill="#4a5a72" font-size="7.5">D → Pin2 · S → PwrGND</text>
+
+<rect x="167" y="384" width="122" height="44" rx="3" fill="#12213a" stroke="#00d4ff" stroke-width="0.8" stroke-dasharray="4,2"/>
+<text x="228" y="400" text-anchor="middle" fill="#e8edf5">HP Input Filter</text>
+<text x="228" y="413" text-anchor="middle" fill="#4a5a72" font-size="7.5">10kΩ + 10nF LPF — L &amp; R</text>
+<text x="228" y="423" text-anchor="middle" fill="#4a5a72" font-size="7.5">20kHz BW · AC coupled</text>
+
+<rect x="167" y="438" width="122" height="44" rx="3" fill="#12213a" stroke="#39d353" stroke-width="0.8" stroke-dasharray="4,2"/>
+<text x="228" y="454" text-anchor="middle" fill="#39d353">Mic Output Pad</text>
+<text x="228" y="467" text-anchor="middle" fill="#4a5a72" font-size="7.5">R divider → −45dBV level</text>
+<text x="228" y="477" text-anchor="middle" fill="#4a5a72" font-size="7.5">600Ω output impedance</text>
+
+<!-- ═══════════════════════════════════════════════════════
+     ③ NAU8822 AUDIO CODEC
+═══════════════════════════════════════════════════════ -->
+<rect x="316" y="80" width="162" height="440" rx="4" fill="#0f1520" stroke="#1e2d42" stroke-width="1.5"/>
+<rect x="316" y="80" width="162" height="24" rx="4" fill="#1a2a3e"/>
+<text x="397" y="96" text-anchor="middle" fill="#00d4ff" font-weight="bold">NAU8822 CODEC</text>
+
+<rect x="326" y="114" width="142" height="60" rx="3" fill="#12213a" stroke="#00d4ff" stroke-width="1"/>
+<text x="397" y="130" text-anchor="middle" fill="#00d4ff">ADC — HP In (Stereo)</text>
+<text x="397" y="143" text-anchor="middle" fill="#e8edf5" font-size="8">LINPUT1 / RINPUT1</text>
+<text x="397" y="155" text-anchor="middle" fill="#4a5a72" font-size="7.5">24-bit 48kHz · PGA +0 to +35.25dB</text>
+<text x="397" y="165" text-anchor="middle" fill="#4a5a72" font-size="7.5">0dBV to −10dBV input range</text>
+
+<rect x="326" y="184" width="142" height="60" rx="3" fill="#12213a" stroke="#39d353" stroke-width="1"/>
+<text x="397" y="200" text-anchor="middle" fill="#39d353">DAC — Mic Out (Mono)</text>
+<text x="397" y="213" text-anchor="middle" fill="#e8edf5" font-size="8">LOUT → via pad → Pin 6</text>
+<text x="397" y="225" text-anchor="middle" fill="#4a5a72" font-size="7.5">−45dBV / 600Ω electret level</text>
+<text x="397" y="235" text-anchor="middle" fill="#4a5a72" font-size="7.5">DC block cap on output</text>
+
+<rect x="326" y="254" width="142" height="50" rx="3" fill="#12213a" stroke="#bd93f9" stroke-width="1"/>
+<text x="397" y="270" text-anchor="middle" fill="#bd93f9">I²S Bus (to ESP32)</text>
+<text x="397" y="283" text-anchor="middle" fill="#4a5a72" font-size="7.5">BCLK · LRCLK · ADCDAT · DACDAT</text>
+<text x="397" y="293" text-anchor="middle" fill="#4a5a72" font-size="7.5">ESP32 = I²S master</text>
+
+<rect x="326" y="314" width="142" height="40" rx="3" fill="#12213a" stroke="#bd93f9" stroke-width="0.8" stroke-dasharray="4,2"/>
+<text x="397" y="330" text-anchor="middle" fill="#bd93f9">I²C Control</text>
+<text x="397" y="342" text-anchor="middle" fill="#4a5a72" font-size="7.5">SDA / SCL · vol · mute · gain</text>
+
+<rect x="326" y="364" width="142" height="40" rx="3" fill="#12213a" stroke="#4a5a72" stroke-width="1"/>
+<text x="397" y="380" text-anchor="middle" fill="#e8edf5">MCLK</text>
+<text x="397" y="392" text-anchor="middle" fill="#4a5a72" font-size="7.5">12.288 MHz from ESP32 CLK_OUT</text>
+
+<rect x="326" y="414" width="142" height="50" rx="3" fill="#12213a" stroke="#ffb347" stroke-width="0.8" stroke-dasharray="4,2"/>
+<text x="397" y="430" text-anchor="middle" fill="#ffb347">Power</text>
+<text x="397" y="443" text-anchor="middle" fill="#4a5a72" font-size="7.5">AVDD / DVDD = 3.3V</text>
+<text x="397" y="453" text-anchor="middle" fill="#4a5a72" font-size="7.5">100nF + 10µF per rail</text>
+
+<!-- ═══════════════════════════════════════════════════════
+     ④ ESP32-WROOM-32E
+═══════════════════════════════════════════════════════ -->
+<rect x="496" y="56" width="256" height="660" rx="6" fill="#0a1626" stroke="#00d4ff" stroke-width="2" filter="url(#glow)"/>
+<rect x="496" y="56" width="256" height="32" rx="6" fill="#0d2040"/>
+<text x="624" y="74" text-anchor="middle" fill="#00d4ff" font-size="12" font-weight="bold" letter-spacing="2" filter="url(#glow)">ESP32-WROOM-32E</text>
+<text x="624" y="85" text-anchor="middle" fill="#4a5a72" font-size="7.5">Pre-certified module · FCC/CE · PCB antenna</text>
+
+<!-- Dual Core -->
+<rect x="506" y="98" width="236" height="80" rx="3" fill="#0f1f35" stroke="#00d4ff" stroke-width="1"/>
+<text x="624" y="114" text-anchor="middle" fill="#00d4ff" font-size="9.5">Dual-Core Xtensa LX6 · 240MHz</text>
+<text x="624" y="127" text-anchor="middle" fill="#e8edf5" font-size="8">Core 0: BT/BLE stack (FreeRTOS task)</text>
+<text x="624" y="140" text-anchor="middle" fill="#e8edf5" font-size="8">Core 1: App — OHIS · PTT · UI · Audio routing</text>
+<text x="624" y="153" text-anchor="middle" fill="#4a5a72" font-size="7.5">4MB Flash · 520KB SRAM · ROM bootloader</text>
+<text x="624" y="164" text-anchor="middle" fill="#4a5a72" font-size="7.5">ESP-IDF + ESP-ADF · Bluedroid BT stack</text>
+
+<!-- BT/BLE Radio -->
+<rect x="506" y="188" width="236" height="70" rx="3" fill="#0f1f35" stroke="#bd93f9" stroke-width="1"/>
+<text x="624" y="204" text-anchor="middle" fill="#bd93f9" font-size="9.5">BT + BLE Radio · 2.4GHz</text>
+<text x="624" y="217" text-anchor="middle" fill="#e8edf5" font-size="8">Classic BT: A2DP Source + HFP Audio Gateway</text>
+<text x="624" y="230" text-anchor="middle" fill="#e8edf5" font-size="8">BLE 5.0: ASHA hearing aid profile · HID host</text>
+<text x="624" y="243" text-anchor="middle" fill="#4a5a72" font-size="7.5">Simultaneous Classic + BLE · onboard PCB ant</text>
+<text x="624" y="254" text-anchor="middle" fill="#4a5a72" font-size="7.5">Connections: Headset (A2DP/ASHA) + PTT (HID)</text>
+
+<!-- I2S -->
+<rect x="506" y="268" width="110" height="60" rx="3" fill="#0f1f35" stroke="#bd93f9" stroke-width="1"/>
+<text x="561" y="284" text-anchor="middle" fill="#bd93f9">I²S Master</text>
+<text x="561" y="297" text-anchor="middle" fill="#4a5a72" font-size="7.5">BCLK / LRCLK</text>
+<text x="561" y="308" text-anchor="middle" fill="#4a5a72" font-size="7.5">DIN / DOUT</text>
+<text x="561" y="319" text-anchor="middle" fill="#4a5a72" font-size="7.5">→ NAU8822</text>
+
+<!-- I2C -->
+<rect x="630" y="268" width="112" height="60" rx="3" fill="#0f1f35" stroke="#bd93f9" stroke-width="1"/>
+<text x="686" y="284" text-anchor="middle" fill="#bd93f9">I²C + MCLK</text>
+<text x="686" y="297" text-anchor="middle" fill="#4a5a72" font-size="7.5">SDA / SCL codec</text>
+<text x="686" y="308" text-anchor="middle" fill="#4a5a72" font-size="7.5">MCLK CLK_OUT</text>
+<text x="686" y="319" text-anchor="middle" fill="#4a5a72" font-size="7.5">12.288MHz</text>
+
+<!-- SPI Display -->
+<rect x="506" y="338" width="110" height="60" rx="3" fill="#0f1f35" stroke="#00d4ff" stroke-width="1"/>
+<text x="561" y="354" text-anchor="middle" fill="#00d4ff">SPI — Display</text>
+<text x="561" y="367" text-anchor="middle" fill="#4a5a72" font-size="7.5">MOSI · SCLK · CS</text>
+<text x="561" y="378" text-anchor="middle" fill="#4a5a72" font-size="7.5">DISP_EN GPIO</text>
+<text x="561" y="389" text-anchor="middle" fill="#4a5a72" font-size="7.5">EXTCOMIN timer</text>
+
+<!-- GPIO -->
+<rect x="630" y="338" width="112" height="60" rx="3" fill="#0f1f35" stroke="#ff5555" stroke-width="1"/>
+<text x="686" y="354" text-anchor="middle" fill="#ff5555">GPIO — Control</text>
+<text x="686" y="367" text-anchor="middle" fill="#4a5a72" font-size="7.5">PTT_OUT → FET</text>
+<text x="686" y="378" text-anchor="middle" fill="#4a5a72" font-size="7.5">4× button inputs</text>
+<text x="686" y="389" text-anchor="middle" fill="#4a5a72" font-size="7.5">3× status LEDs</text>
+
+<!-- ADC -->
+<rect x="506" y="408" width="110" height="52" rx="3" fill="#0f1f35" stroke="#amber" stroke-width="1" stroke="#ffb347"/>
+<text x="561" y="424" text-anchor="middle" fill="#ffb347">ADC</text>
+<text x="561" y="437" text-anchor="middle" fill="#4a5a72" font-size="7.5">LDR ambient light</text>
+<text x="561" y="448" text-anchor="middle" fill="#4a5a72" font-size="7.5">→ PWM backlight</text>
+
+<!-- UART/USB -->
+<rect x="630" y="408" width="112" height="52" rx="3" fill="#0f1f35" stroke="#ffb347" stroke-width="1"/>
+<text x="686" y="424" text-anchor="middle" fill="#ffb347">UART / USB</text>
+<text x="686" y="437" text-anchor="middle" fill="#4a5a72" font-size="7.5">CP2102N prog/debug</text>
+<text x="686" y="448" text-anchor="middle" fill="#4a5a72" font-size="7.5">UART0 console</text>
+
+<!-- PWM Frontlight -->
+<rect x="506" y="470" width="110" height="44" rx="3" fill="#0f1f35" stroke="#00d4ff" stroke-width="0.8" stroke-dasharray="4,2"/>
+<text x="561" y="486" text-anchor="middle" fill="#00d4ff">PWM</text>
+<text x="561" y="499" text-anchor="middle" fill="#4a5a72" font-size="7.5">Frontlight LED driver</text>
+
+<!-- NVS -->
+<rect x="630" y="470" width="112" height="44" rx="3" fill="#0f1f35" stroke="#4a5a72" stroke-width="1"/>
+<text x="686" y="486" text-anchor="middle" fill="#e8edf5">NVS Flash</text>
+<text x="686" y="499" text-anchor="middle" fill="#4a5a72" font-size="7.5">Paired device addresses</text>
+
+<!-- Supply note -->
+<text x="624" y="535" text-anchor="middle" fill="#4a5a72" font-size="7.5">VDD = 3.3V · all decoupling per Espressif ref design</text>
+<text x="624" y="547" text-anchor="middle" fill="#4a5a72" font-size="7.5">100nF + 10µF near each VDD pin · ferrite on RF VDD</text>
+<text x="624" y="690" text-anchor="middle" fill="#00d4ff" font-size="8.5" letter-spacing="1">ESP32-WROOM-32E</text>
+
+<!-- ═══════════════════════════════════════════════════════
+     ⑤ BT TARGETS
+═══════════════════════════════════════════════════════ -->
+<rect x="822" y="56" width="172" height="460" rx="4" fill="#0f1520" stroke="#1e2d42" stroke-width="1.5"/>
+<rect x="822" y="56" width="172" height="24" rx="4" fill="#1a2a3e"/>
+<text x="908" y="72" text-anchor="middle" fill="#bd93f9" font-weight="bold">BT / BLE DEVICES</text>
+
+<rect x="832" y="90" width="152" height="48" rx="3" fill="#12213a" stroke="#00d4ff" stroke-width="1"/>
+<text x="908" y="107" text-anchor="middle" fill="#00d4ff">BT Headsets</text>
+<text x="908" y="120" text-anchor="middle" fill="#4a5a72" font-size="7.5">A2DP Source + HFP AG</text>
+<text x="908" y="130" text-anchor="middle" fill="#4a5a72" font-size="7.5">Sony · Jabra · Bose · Plantronics</text>
+
+<rect x="832" y="148" width="152" height="48" rx="3" fill="#12213a" stroke="#39d353" stroke-width="1"/>
+<text x="908" y="165" text-anchor="middle" fill="#39d353">Hearing Aids</text>
+<text x="908" y="178" text-anchor="middle" fill="#4a5a72" font-size="7.5">BLE ASHA profile (BLE 4.2+)</text>
+<text x="908" y="188" text-anchor="middle" fill="#4a5a72" font-size="7.5">Phonak · Oticon · Starkey</text>
+
+<rect x="832" y="206" width="152" height="48" rx="3" fill="#12213a" stroke="#ffb347" stroke-width="1"/>
+<text x="908" y="223" text-anchor="middle" fill="#ffb347">TWS Earbuds</text>
+<text x="908" y="236" text-anchor="middle" fill="#4a5a72" font-size="7.5">Classic BT A2DP/HFP</text>
+<text x="908" y="246" text-anchor="middle" fill="#4a5a72" font-size="7.5">Most Android TWS devices</text>
+
+<rect x="832" y="264" width="152" height="48" rx="3" fill="#12213a" stroke="#ff5555" stroke-width="1"/>
+<text x="908" y="281" text-anchor="middle" fill="#ff5555">BT PTT Switch</text>
+<text x="908" y="294" text-anchor="middle" fill="#4a5a72" font-size="7.5">BLE or Classic BT HID</text>
+<text x="908" y="304" text-anchor="middle" fill="#4a5a72" font-size="7.5">Otto · Kenwood · generic</text>
+
+<rect x="832" y="322" width="152" height="48" rx="3" fill="#12213a" stroke="#4a5a72" stroke-width="1"/>
+<text x="908" y="339" text-anchor="middle" fill="#e8edf5">Phone / Tablet App</text>
+<text x="908" y="352" text-anchor="middle" fill="#4a5a72" font-size="7.5">BLE — PTT status · pairing</text>
+<text x="908" y="362" text-anchor="middle" fill="#4a5a72" font-size="7.5">device management</text>
+
+<!-- PTT flow note -->
+<rect x="832" y="384" width="152" height="76" rx="3" fill="#1a0a0a" stroke="#ff5555" stroke-width="1"/>
+<text x="908" y="400" text-anchor="middle" fill="#ff5555" font-size="8.5">PTT Signal Flow</text>
+<text x="908" y="414" text-anchor="middle" fill="#4a5a72" font-size="7.5">BT HID button press →</text>
+<text x="908" y="425" text-anchor="middle" fill="#4a5a72" font-size="7.5">ESP32 HID callback →</text>
+<text x="908" y="436" text-anchor="middle" fill="#4a5a72" font-size="7.5">GPIO → 2N7002 gate →</text>
+<text x="908" y="447" text-anchor="middle" fill="#4a5a72" font-size="7.5">OHIS Pin 2 → PwrGND</text>
+<text x="908" y="456" text-anchor="middle" fill="#ff5555" font-size="7.5">~15ms end-to-end latency</text>
+
+<!-- ═══════════════════════════════════════════════════════
+     ⑥ POWER SYSTEM
+═══════════════════════════════════════════════════════ -->
+<rect x="1020" y="56" width="178" height="580" rx="4" fill="#0f1520" stroke="#1e2d42" stroke-width="1.5"/>
+<rect x="1020" y="56" width="178" height="24" rx="4" fill="#1a2a3e"/>
+<text x="1109" y="72" text-anchor="middle" fill="#ffb347" font-weight="bold">POWER SYSTEM</text>
+
+<!-- USB-C -->
+<rect x="1030" y="90" width="158" height="62" rx="3" fill="#12213a" stroke="#ffb347" stroke-width="1"/>
+<text x="1109" y="107" text-anchor="middle" fill="#ffb347">USB-C Connector</text>
+<text x="1109" y="120" text-anchor="middle" fill="#e8edf5" font-size="8">5V / 500mA — no USB-PD</text>
+<text x="1109" y="133" text-anchor="middle" fill="#4a5a72" font-size="7.5">CC1/CC2: 5.1kΩ to GND</text>
+<text x="1109" y="143" text-anchor="middle" fill="#4a5a72" font-size="7.5">identifies as valid USB-C sink</text>
+
+<!-- MCP73871 -->
+<rect x="1030" y="162" width="158" height="90" rx="3" fill="#12213a" stroke="#ffb347" stroke-width="1"/>
+<text x="1109" y="179" text-anchor="middle" fill="#ffb347">MCP73871</text>
+<text x="1109" y="192" text-anchor="middle" fill="#e8edf5" font-size="8">LiPo Charger + Power Path</text>
+<text x="1109" y="205" text-anchor="middle" fill="#4a5a72" font-size="7.5">USB→charges battery AND</text>
+<text x="1109" y="216" text-anchor="middle" fill="#4a5a72" font-size="7.5">powers system simultaneously</text>
+<text x="1109" y="227" text-anchor="middle" fill="#4a5a72" font-size="7.5">500mA charge / 1A sys current</text>
+<text x="1109" y="238" text-anchor="middle" fill="#4a5a72" font-size="7.5">STAT1/2 LEDs: charging status</text>
+<text x="1109" y="248" text-anchor="middle" fill="#4a5a72" font-size="7.5">Rprog = 2kΩ → 500mA charge</text>
+
+<!-- LiPo -->
+<rect x="1030" y="262" width="158" height="60" rx="3" fill="#12213a" stroke="#ffb347" stroke-width="1"/>
+<text x="1109" y="279" text-anchor="middle" fill="#ffb347">LiPo Battery 1S</text>
+<text x="1109" y="292" text-anchor="middle" fill="#e8edf5" font-size="8">3.7V nominal · 2000mAh</text>
+<text x="1109" y="305" text-anchor="middle" fill="#4a5a72" font-size="7.5">JST-PH 2-pin connector</text>
+<text x="1109" y="315" text-anchor="middle" fill="#4a5a72" font-size="7.5">~25h runtime @ 80mA avg</text>
+
+<!-- TPS63020 -->
+<rect x="1030" y="332" width="158" height="90" rx="3" fill="#12213a" stroke="#green" stroke-width="1" stroke="#39d353"/>
+<text x="1109" y="349" text-anchor="middle" fill="#39d353">TPS63020 Buck-Boost</text>
+<text x="1109" y="362" text-anchor="middle" fill="#e8edf5" font-size="8">VSYS (3.0–5.5V) → 3.3V fixed</text>
+<text x="1109" y="375" text-anchor="middle" fill="#4a5a72" font-size="7.5">Regulates through full LiPo range</text>
+<text x="1109" y="386" text-anchor="middle" fill="#4a5a72" font-size="7.5">2A output · 90% efficiency</text>
+<text x="1109" y="397" text-anchor="middle" fill="#4a5a72" font-size="7.5">2.2µH inductor · 22µF out cap</text>
+<text x="1109" y="408" text-anchor="middle" fill="#4a5a72" font-size="7.5">EN tied high (always on)</text>
+<text x="1109" y="418" text-anchor="middle" fill="#4a5a72" font-size="7.5">PFM/PWM pin = GND (auto)</text>
+
+<!-- 3V3 rail -->
+<rect x="1030" y="432" width="158" height="50" rx="3" fill="#12213a" stroke="#39d353" stroke-width="1"/>
+<text x="1109" y="449" text-anchor="middle" fill="#39d353">+3.3V Rail</text>
+<text x="1109" y="462" text-anchor="middle" fill="#4a5a72" font-size="7.5">→ ESP32 · NAU8822 · Display</text>
+<text x="1109" y="472" text-anchor="middle" fill="#4a5a72" font-size="7.5">→ LEDs · Buttons · LDR</text>
+
+<!-- Power budget -->
+<rect x="1030" y="492" width="158" height="100" rx="3" fill="#12213a" stroke="#4a5a72" stroke-width="1"/>
+<text x="1109" y="509" text-anchor="middle" fill="#e8edf5" font-size="8.5">Power Budget @ 3.3V</text>
+<text x="1109" y="523" text-anchor="middle" fill="#4a5a72" font-size="7.5">ESP32 active BT:    ~40mA</text>
+<text x="1109" y="534" text-anchor="middle" fill="#4a5a72" font-size="7.5">NAU8822:            ~8mA</text>
+<text x="1109" y="545" text-anchor="middle" fill="#4a5a72" font-size="7.5">Display (MIP):       ~5µA</text>
+<text x="1109" y="556" text-anchor="middle" fill="#4a5a72" font-size="7.5">Frontlight (mid):    ~5mA</text>
+<text x="1109" y="567" text-anchor="middle" fill="#4a5a72" font-size="7.5">LEDs + misc:         ~5mA</text>
+<text x="1109" y="578" text-anchor="middle" fill="#39d353" font-size="8">Total ≈ 58mA → ~34h / 2Ah</text>
+
+<!-- Charge LED -->
+<rect x="1030" y="602" width="158" height="28" rx="3" fill="#12213a" stroke="#4a5a72" stroke-width="0.7"/>
+<text x="1109" y="614" text-anchor="middle" fill="#e8edf5" font-size="8">Charge LED — STAT1 open-drain</text>
+<text x="1109" y="624" text-anchor="middle" fill="#4a5a72" font-size="7.5">Red=charging · off=full / no USB</text>
+
+<!-- ═══════════════════════════════════════════════════════
+     ⑦ HMI — Display + Buttons + LEDs
+═══════════════════════════════════════════════════════ -->
+<rect x="1220" y="56" width="128" height="580" rx="4" fill="#0f1520" stroke="#1e2d42" stroke-width="1.5"/>
+<rect x="1220" y="56" width="128" height="24" rx="4" fill="#1a2a3e"/>
+<text x="1284" y="72" text-anchor="middle" fill="#00d4ff" font-weight="bold">HMI</text>
+
+<!-- Sharp MIP -->
+<rect x="1230" y="90" width="108" height="100" rx="3" fill="#12213a" stroke="#00d4ff" stroke-width="1"/>
+<text x="1284" y="107" text-anchor="middle" fill="#00d4ff">Sharp MIP Display</text>
+<text x="1284" y="120" text-anchor="middle" fill="#e8edf5" font-size="8">LS013B7DH03</text>
+<text x="1284" y="133" text-anchor="middle" fill="#4a5a72" font-size="7.5">1.28" · 128×128 · mono</text>
+<text x="1284" y="144" text-anchor="middle" fill="#4a5a72" font-size="7.5">3-wire SPI · ~5µA display</text>
+<text x="1284" y="155" text-anchor="middle" fill="#4a5a72" font-size="7.5">EXTCOMIN 1Hz timer</text>
+<text x="1284" y="166" text-anchor="middle" fill="#4a5a72" font-size="7.5">Persist image w/o refresh</text>
+<text x="1284" y="177" text-anchor="middle" fill="#4a5a72" font-size="7.5">LCSC: ~$3.00</text>
+<text x="1284" y="187" text-anchor="middle" fill="#4a5a72" font-size="7.5">u8g2 driver support ✓</text>
+
+<!-- Frontlight -->
+<rect x="1230" y="200" width="108" height="72" rx="3" fill="#12213a" stroke="#amber" stroke-width="1" stroke="#ffb347"/>
+<text x="1284" y="217" text-anchor="middle" fill="#ffb347">LED Frontlight</text>
+<text x="1284" y="230" text-anchor="middle" fill="#e8edf5" font-size="8">White PLCC-2 SMD LED</text>
+<text x="1284" y="243" text-anchor="middle" fill="#4a5a72" font-size="7.5">BSS138 FET PWM drive</text>
+<text x="1284" y="254" text-anchor="middle" fill="#4a5a72" font-size="7.5">0–8mA · 0–100% duty</text>
+<text x="1284" y="265" text-anchor="middle" fill="#4a5a72" font-size="7.5">Off outdoors · dim at night</text>
+
+<!-- LDR -->
+<rect x="1230" y="282" width="108" height="58" rx="3" fill="#12213a" stroke="#ffb347" stroke-width="0.8" stroke-dasharray="4,2"/>
+<text x="1284" y="299" text-anchor="middle" fill="#ffb347">LDR Sensor</text>
+<text x="1284" y="312" text-anchor="middle" fill="#e8edf5" font-size="8">GL5528 + 10kΩ divider</text>
+<text x="1284" y="325" text-anchor="middle" fill="#4a5a72" font-size="7.5">→ ESP32 ADC pin</text>
+<text x="1284" y="335" text-anchor="middle" fill="#4a5a72" font-size="7.5">auto-dims frontlight</text>
+
+<!-- Buttons -->
+<rect x="1230" y="350" width="108" height="98" rx="3" fill="#12213a" stroke="#00d4ff" stroke-width="1"/>
+<text x="1284" y="367" text-anchor="middle" fill="#00d4ff">4× Tactile Buttons</text>
+<text x="1284" y="380" text-anchor="middle" fill="#e8edf5" font-size="8">SELECT / PAIR</text>
+<text x="1284" y="393" text-anchor="middle" fill="#e8edf5" font-size="8">BACK / CLEAR</text>
+<text x="1284" y="406" text-anchor="middle" fill="#e8edf5" font-size="8">UP ▲  /  DOWN ▼</text>
+<text x="1284" y="419" text-anchor="middle" fill="#4a5a72" font-size="7.5">GPIO + internal pull-up</text>
+<text x="1284" y="430" text-anchor="middle" fill="#4a5a72" font-size="7.5">100nF RC debounce</text>
+<text x="1284" y="441" text-anchor="middle" fill="#4a5a72" font-size="7.5">Long-press = pair mode</text>
+
+<!-- Status LEDs -->
+<rect x="1230" y="458" width="108" height="82" rx="3" fill="#12213a" stroke="#39d353" stroke-width="1"/>
+<text x="1284" y="475" text-anchor="middle" fill="#39d353">Status LEDs</text>
+<text x="1284" y="489" text-anchor="middle" fill="#00d4ff" font-size="8">● Cyan — BT connected</text>
+<text x="1284" y="502" text-anchor="middle" fill="#ff5555" font-size="8">● Red  — PTT active / TX</text>
+<text x="1284" y="515" text-anchor="middle" fill="#39d353" font-size="8">● Green — Power / 3V3 OK</text>
+<text x="1284" y="528" text-anchor="middle" fill="#ffb347" font-size="8">● Amber — Charging</text>
+<text x="1284" y="540" text-anchor="middle" fill="#4a5a72" font-size="7.5">33Ω series resistors</text>
+
+<!-- CP2102N -->
+<rect x="1230" y="550" width="108" height="50" rx="3" fill="#12213a" stroke="#4a5a72" stroke-width="1"/>
+<text x="1284" y="567" text-anchor="middle" fill="#e8edf5">CP2102N</text>
+<text x="1284" y="580" text-anchor="middle" fill="#4a5a72" font-size="7.5">USB→UART prog/debug</text>
+<text x="1284" y="591" text-anchor="middle" fill="#4a5a72" font-size="7.5">via USB-C connector</text>
+
+<!-- ═══════════════════════════════════════════════════════
+     SIGNAL FLOW ARROWS
+═══════════════════════════════════════════════════════ -->
+
+<!-- OHIS → ESD: HP L/R (cyan) -->
+<line x1="134" y1="243" x2="167" y2="135" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#ac)"/>
+<line x1="134" y1="419" x2="167" y2="145" stroke="#00d4ff" stroke-width="1.2" stroke-dasharray="5,2" marker-end="url(#ac)"/>
+
+<!-- OHIS → ESD: Vcc (amber) -->
+<line x1="134" y1="111" x2="167" y2="190" stroke="#ffb347" stroke-width="1.5" marker-end="url(#aa)"/>
+
+<!-- OHIS ← ESD: Mic (green) -->
+<line x1="167" y1="460" x2="134" y2="331" stroke="#39d353" stroke-width="1.5" marker-end="url(#ag)"/>
+
+<!-- OHIS: PTT FET → Pin2 (red) -->
+<line x1="167" y1="352" x2="134" y2="155" stroke="#ff5555" stroke-width="1.5" stroke-dasharray="5,2" marker-end="url(#ar)"/>
+
+<!-- ESD → Codec: HP L/R (cyan) -->
+<line x1="298" y1="136" x2="326" y2="136" stroke="#00d4ff" stroke-width="1.5" marker-end="url(#ac)"/>
+<text x="312" y="129" text-anchor="middle" fill="#00d4ff" font-size="7.5">HP L+R</text>
+
+<!-- Codec ← ESD: Mic (green) -->
+<line x1="326" y1="214" x2="298" y2="460" stroke="#39d353" stroke-width="1.5" marker-end="url(#ag)"/>
+<text x="308" y="330" text-anchor="middle" fill="#39d353" font-size="7.5" transform="rotate(-85,308,330)">MIC_OUT</text>
+
+<!-- Codec ↔ ESP32: I2S (purple) -->
+<line x1="478" y1="280" x2="506" y2="295" stroke="#bd93f9" stroke-width="1.5" marker-end="url(#ap)"/>
+<line x1="506" y1="305" x2="478" y2="290" stroke="#bd93f9" stroke-width="1.2" stroke-dasharray="5,2" marker-end="url(#ap)"/>
+<text x="492" y="276" text-anchor="middle" fill="#bd93f9" font-size="7.5">I²S</text>
+
+<!-- Codec ↔ ESP32: I2C (purple dashed) -->
+<line x1="478" y1="330" x2="506" y2="350" stroke="#bd93f9" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ap)"/>
+<text x="492" y="325" text-anchor="middle" fill="#bd93f9" font-size="7.5">I²C</text>
+
+<!-- ESP32 → PTT FET (red) -->
+<line x1="496" y1="360" x2="298" y2="352" stroke="#ff5555" stroke-width="1.5" marker-end="url(#ar)"/>
+<text x="397" y="345" text-anchor="middle" fill="#ff5555" font-size="7.5">PTT_GPIO</text>
+
+<!-- ESP32 ↔ BT devices (purple) -->
+<line x1="752" y1="230" x2="822" y2="115" stroke="#bd93f9" stroke-width="2" marker-end="url(#ap)" filter="url(#glow)"/>
+<line x1="822" y1="175" x2="752" y2="250" stroke="#bd93f9" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#ap)"/>
+<text x="790" y="185" text-anchor="middle" fill="#bd93f9" font-size="8" transform="rotate(-35,790,185)">Classic BT</text>
+<text x="798" y="230" text-anchor="middle" fill="#bd93f9" font-size="8" transform="rotate(-20,798,230)">BLE</text>
+
+<!-- ESP32 → Display SPI (cyan) -->
+<line x1="752" y1="360" x2="1220" y2="135" stroke="#00d4ff" stroke-width="1.2" stroke-dasharray="5,2" marker-end="url(#ac)"/>
+<text x="990" y="240" text-anchor="middle" fill="#00d4ff" font-size="7.5">SPI · 3-wire</text>
+
+<!-- ESP32 → Buttons (dim) -->
+<line x1="752" y1="378" x2="1220" y2="395" stroke="#4a5a72" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ad)"/>
+<text x="990" y="382" text-anchor="middle" fill="#4a5a72" font-size="7.5">GPIO inputs</text>
+
+<!-- ESP32 → LEDs (green) -->
+<line x1="752" y1="388" x2="1220" y2="498" stroke="#39d353" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ag)"/>
+
+<!-- ESP32 ADC ← LDR (amber) -->
+<line x1="752" y1="435" x2="1220" y2="320" stroke="#ffb347" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#aa)"/>
+<text x="990" y="370" text-anchor="middle" fill="#ffb347" font-size="7.5">ADC / LDR</text>
+
+<!-- ESP32 PWM → Frontlight (amber) -->
+<line x1="752" y1="485" x2="1220" y2="240" stroke="#ffb347" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#aa)"/>
+
+<!-- Power: USB-C → MCP73871 (amber) -->
+<line x1="1109" y1="152" x2="1109" y2="162" stroke="#ffb347" stroke-width="1.5" marker-end="url(#aa)"/>
+<!-- MCP73871 ↔ LiPo (amber) -->
+<line x1="1080" y1="252" x2="1080" y2="262" stroke="#ffb347" stroke-width="1.5" marker-end="url(#aa)"/>
+<line x1="1130" y1="262" x2="1130" y2="252" stroke="#ffb347" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#aa)"/>
+<!-- MCP73871 VSYS → TPS63020 VIN (amber) -->
+<line x1="1109" y1="252" x2="1109" y2="332" stroke="#ffb347" stroke-width="1.5" marker-end="url(#aa)"/>
+<!-- TPS63020 VOUT → 3V3 rail (green) -->
+<line x1="1109" y1="422" x2="1109" y2="432" stroke="#39d353" stroke-width="1.5" marker-end="url(#ag)"/>
+
+<!-- 3V3 → ESP32 (green) -->
+<line x1="1020" y1="456" x2="752" y2="580" stroke="#39d353" stroke-width="1.5" stroke-dasharray="5,2" marker-end="url(#ag)"/>
+<text x="890" y="530" text-anchor="middle" fill="#39d353" font-size="8">3.3V</text>
+
+<!-- 3V3 → Codec (green) -->
+<line x1="1020" y1="462" x2="478" y2="430" stroke="#39d353" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ag)"/>
+
+<!-- Vcc OHIS → MCP73871 VIN (amber dashed — optional OHIS power) -->
+<line x1="134" y1="111" x2="1030" y2="115" stroke="#ffb347" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.4"/>
+<text x="580" y="108" text-anchor="middle" fill="#ffb347" font-size="7" opacity="0.5">Vcc (5V OHIS — not used for charging)</text>
+
+<!-- BT wave decoration -->
+<g opacity="0.3" filter="url(#glow)">
+  <path d="M840,490 Q855,475 870,490 Q885,505 900,490" stroke="#bd93f9" stroke-width="2" fill="none"/>
+  <path d="M830,478 Q855,455 880,478 Q905,500 930,478" stroke="#bd93f9" stroke-width="1.5" fill="none"/>
+</g>
+
+<!-- Title box -->
+<rect x="1020" y="650" width="328" height="60" rx="4" fill="#0f1520" stroke="#1e2d42"/>
+<text x="1184" y="668" text-anchor="middle" fill="#00d4ff" font-size="9" letter-spacing="1">OHIS BLE BRIDGE</text>
+<text x="1184" y="683" text-anchor="middle" fill="#4a5a72" font-size="8">OHIS User Device · ESP32-WROOM-32E</text>
+<text x="1184" y="696" text-anchor="middle" fill="#4a5a72" font-size="8">Classic BT + BLE · MIP Display · Rev B · 2025</text>
+</svg>
+</div>
+
+<div class="legend">
+  <div class="li"><div class="ll" style="background:#00d4ff"></div>HP Audio / SPI / HP signal paths</div>
+  <div class="li"><div class="ll" style="background:#39d353"></div>Mic Audio / 3.3V power rail</div>
+  <div class="li"><div class="ll" style="background:#ff5555"></div>PTT signal</div>
+  <div class="li"><div class="ll" style="background:#ffb347"></div>Power (5V / VSYS / charge)</div>
+  <div class="li"><div class="ll" style="background:#bd93f9"></div>BT/BLE RF · I²S · I²C</div>
+  <div class="li"><div class="ll" style="background:#4a5a72;height:1px;border-top:1px dashed #4a5a72"></div>GPIO / control signals</div>
+</div>
+
+<div class="notes">
+  <div class="nc">
+    <h3>OHIS Interface</h3>
+    User-side 8P8C RJ-45. Three grounds (MicGND pin 3, HPGND pin 5, PwrGND pin 7) kept separate on PCB. Vcc from pin 1 feeds the MCP73871 VIN as a secondary power source when no USB present, but is not used for battery charging. PTT asserted by 2N7002 N-FET pulling pin 2 to PwrGND on GPIO command.
+  </div>
+  <div class="nc gr">
+    <h3>Audio Path</h3>
+    HP audio (0 to −10dBV) received through 10kΩ/10nF filter into NAU8822 ADC. ESP32 I²S master clocks the codec at 48kHz/24-bit. BT audio encoded to SBC/AAC for headsets or decoded from HFP SCO for mic. DAC output padded to −45dBV electret level through 600Ω output pad and 100nF DC block before OHIS pin 6.
+  </div>
+  <div class="nc pu">
+    <h3>Bluetooth</h3>
+    ESP32 Bluedroid stack runs A2DP Source + HFP Audio Gateway for Classic BT headsets simultaneously with BLE for ASHA hearing aids and BLE HID PTT switches. PTT switch button press triggers ESP32 HID callback in ~15ms, driving the OHIS PTT FET. Headset's own multifunction button can also be remapped to PTT via HFP call-answer event.
+  </div>
+  <div class="nc am">
+    <h3>Power System</h3>
+    MCP73871 handles USB-C input, LiPo charging (500mA via Rprog), and power-path — system runs from USB while charging the battery with no external OR circuit needed. TPS63020 buck-boost maintains 3.3V across full LiPo discharge (4.2V→3.0V). Estimated 34h runtime on 2000mAh cell at typical BT-active load.
+  </div>
+  <div class="nc">
+    <h3>Sharp MIP + Frontlight</h3>
+    LS013B7DH03 draws ~5µA with image held in pixel memory — no refresh needed. EXTCOMIN driven by ESP32 timer at 1Hz. White PLCC-2 LED frontlight via BSS138 FET + PWM. GL5528 LDR on ADC pin controls duty automatically; any button press overrides to next brightness step with 30s auto-resume timeout.
+  </div>
+  <div class="nc re">
+    <h3>PTT Complete Flow</h3>
+    Three independent PTT sources all funnel to the same 2N7002 gate: (1) BT HID switch over BLE/Classic BT, (2) headset multifunction button via HFP callback, (3) physical front-panel button wired direct to GPIO. Any source keys the radio. TX active shown on red status LED and optionally broadcast as BLE status to a companion phone app.
+  </div>
+</div>
+
+</body>
+</html>
